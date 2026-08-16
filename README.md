@@ -17,7 +17,7 @@ This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy
 - **RAG Flow**: The user's query is embedded and searched against a FAISS vector database and a BM25 keyword index (`backend/retriever.py`), and then sent to the Groq LLM API (`backend/generator.py`).
 - **Retrieval Evaluation**: 
   - **Results:** Vector-only search achieved a **0.80 Hit Rate / 0.68 MRR**. Hybrid Search (Vector + BM25) tied with a **0.80 Hit Rate / 0.68 MRR** on our golden dataset. 
-  - **Conclusion:** We opted for Hybrid Search in production because it reliably captures exact-match keywords (like specific article numbers) alongside semantic meaning. (See `backend/eval_retrieval.py`).
+  - **Conclusion:** While they tied on our small golden dataset of 10 questions, we opted for Hybrid Search in production because it reliably captures exact-match keywords (like specific article numbers) alongside semantic meaning for edge cases. (See `backend/eval_retrieval.py`).
 - **LLM Evaluation**: 
   - We evaluated two prompts: Variant 1 (Plain English Translation) vs Variant 2 (Strict Legal Analyst). 
   - **Conclusion:** Variant 1 won. It provided much better UX for our target audience (startups/developers) by translating dense legal jargon into readable English without hallucinating, whereas Variant 2 was too rigid. (See `backend/eval_llm.py`).
@@ -28,7 +28,7 @@ This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy
 - **Reproducibility**: See the "How to Run" section below. Dependency versions are strictly pinned in `backend/requirements.txt` and `frontend/package.json`.
 - **Best Practices (Bonus Points)**:
   - **Hybrid Search:** Combined FAISS and BM25.
-  - **Query Rewriting:** The user's query is sent to the Groq LLM to be rewritten into an optimized search string before hitting the database (`backend/generator.py`).
+  - **Query Rewriting:** The user's query is sent to the Groq LLM to be rewritten into an optimized search string before hitting the database *(e.g., rewriting "can they sell my data" → "lawfulness of processing personal data for commercial purposes")*. Note: This adds a slight latency cost (~500ms) due to the extra LLM round-trip, but vastly improves search accuracy. (`backend/generator.py`).
   - **Document Re-ranking:** We over-fetch 15 candidates and re-rank them using a `sentence-transformers` Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) in `backend/retriever.py`.
 
 ---
@@ -41,7 +41,7 @@ This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy
 - **LLM Engine**: Groq API (`llama-3.1-8b-instant`).
 - **Frontend UI**: Next.js (React, TypeScript, TailwindCSS).
 - **Database**: SQLite.
-- **Prerequisites**: Python 3.11+, Node.js 18+, Docker (optional).
+- **Prerequisites**: Python 3.11+, Node.js 20+, Docker (optional).
 
 ---
 

@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "monitoring", "logs.db")
@@ -36,6 +37,45 @@ else:
     col2.metric("Avg Latency (ms)", f"{avg_latency:.0f}")
     col3.metric("👍 Thumbs Up", positive_feedback)
     col4.metric("👎 Thumbs Down", negative_feedback)
+    
+
+    st.markdown("---")
+    
+    st.subheader("System Performance & Analytics")
+    
+    # 5 Charts required by DataTalks.Club rubric
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        # Chart 1: Queries by Retrieval Mode
+        mode_counts = df['retrieval_mode'].value_counts().reset_index()
+        mode_counts.columns = ['Mode', 'Count']
+        fig1 = px.bar(mode_counts, x='Mode', y='Count', title='Queries by Retrieval Mode', color='Mode')
+        st.plotly_chart(fig1, use_container_width=True)
+        
+        # Chart 3: Latency Distribution
+        fig3 = px.histogram(df, x='latency_ms', nbins=20, title='Latency Distribution (ms)', color_discrete_sequence=['#b08d57'])
+        st.plotly_chart(fig3, use_container_width=True)
+
+    with chart_col2:
+        # Chart 2: User Feedback Pie Chart
+        feedback_labels = df['feedback'].map({1: 'Positive (👍)', -1: 'Negative (👎)', None: 'No Feedback'}).fillna("No Feedback")
+        feedback_counts = feedback_labels.value_counts().reset_index()
+        feedback_counts.columns = ['Feedback', 'Count']
+        fig2 = px.pie(feedback_counts, values='Count', names='Feedback', title='User Feedback Breakdown', hole=0.4)
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        # Chart 4: Queries Over Time (Aggregated by Minute)
+        time_df = df.copy()
+        time_df['Time (Minute)'] = time_df['created_at'].dt.floor('Min')
+        volume_df = time_df.groupby('Time (Minute)').size().reset_index(name='Queries')
+        fig4 = px.line(volume_df, x='Time (Minute)', y='Queries', title='Query Volume Over Time', markers=True)
+        st.plotly_chart(fig4, use_container_width=True)
+        
+    # Chart 5: Average Latency Over Time (Full width)
+    lat_df = time_df.groupby('Time (Minute)')['latency_ms'].mean().reset_index()
+    fig5 = px.line(lat_df, x='Time (Minute)', y='latency_ms', title='Average Latency Over Time (ms)', markers=True, color_discrete_sequence=['#c4645a'])
+    st.plotly_chart(fig5, use_container_width=True)
     
     st.markdown("---")
     
