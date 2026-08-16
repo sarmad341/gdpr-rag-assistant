@@ -1,7 +1,5 @@
 # GDPR Q&A Assistant — Ask the Regulation
 
-> **Reviewer Note on Screenshots:**
-
 > ![UI Screenshot](docs/ui_screenshot.png) 
 
 ## 📖 The Problem
@@ -101,8 +99,6 @@ Once the servers are running, open **http://localhost:3000** in your browser.
 Example questions:
 1. *"What are the conditions for consent?"*
 2. *"When is a data protection officer required?"*
-
-> **Reviewer Note on Dashboard Screenshot:**
 
 > ![Dashboard Screenshot](docs/dashboard_screenshot.png) 
 
