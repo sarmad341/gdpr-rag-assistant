@@ -1,96 +1,101 @@
-# GDPR Q&A RAG Assistant — Build Progress
+# GDPR Q&A Assistant — Ask the Regulation
 
-## Architecture
+![UI Screenshot](docs/ui_screenshot.png) *(Placeholder: Add a screenshot of the Next.js UI here!)*
 
-```
-gdpr-rag/
-├── data/
-│   ├── fetch_and_chunk.py     # Fetches official GDPR text from EUR-Lex, parses into article chunks
-│   ├── raw_gdpr_text.txt      # Sample text (Articles 1-49) used to build/test this pipeline
-│   ├── gdpr_articles.json     # Parsed chunks: [{article_number, title, chapter, text}, ...]
-│   └── index/                 # Built by ingestion/ingest.py — FAISS + BM25 indexes
-├── ingestion/
-│   └── ingest.py              # Builds embeddings, FAISS vector index, BM25 keyword index
-├── rag/
-│   └── rag.py                 # Core RAG class: retrieve (vector/bm25/hybrid) + generate
-├── backend/
-│   ├── main.py                 # FastAPI: /api/query, /api/feedback, /api/health
-│   └── requirements.txt
-├── frontend/                   # Next.js (TypeScript, Tailwind) UI
-│   └── src/
-│       ├── app/page.tsx        # Main Q&A page
-│       ├── components/         # ArticleStamp (citation badge), FeedbackButtons
-│       └── lib/api.ts          # Typed API client
-├── eval/                       # (next phase)
-├── monitoring/                 # logs.db (SQLite) written by backend, dashboard TBD
-└── requirements.txt             # (root-level convenience file, mirrors ingestion+rag deps)
-```
+## 📖 The Problem
+Legal and regulatory text is notoriously dense. The GDPR (General Data Protection Regulation) is a massive 99-article document governing data privacy in the EU. For startup founders, developers, and small business owners, reading the entire regulation to find out if they need a Data Protection Officer or how long they have to report a data breach is a massive time sink.
 
-**Flow:** Next.js frontend → FastAPI backend (`/api/query`) → `rag.py` (hybrid retrieval
-over FAISS + BM25) → LLM (Groq or Ollama) → answer + cited articles → logged to SQLite
-→ rendered in UI with thumbs up/down feedback (written back to SQLite via `/api/feedback`).
+**This project solves that problem.** It is a Retrieval-Augmented Generation (RAG) system that allows users to ask plain-English questions about the GDPR. Instead of just guessing, the system searches the actual, official legal text of the GDPR, retrieves the most relevant articles, and uses a Large Language Model (LLM) to generate a clear answer *grounded exclusively in the law*.
 
-## IMPORTANT — before you run this for real
+---
 
-`data/raw_gdpr_text.txt` currently contains a **summarized placeholder** of Articles
-1-49, not the verbatim legal text. Before doing anything else, get the real official
-text on your own machine (EUR-Lex isn't reachable from the sandbox this was built in):
+## 🎯 Reviewer Guide (Evaluation Criteria)
 
+This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy, here is where you can find the implementation for each criterion:
+
+- **Problem Description**: See the section above!
+- **RAG Flow**: Handled in `backend/main.py`. The user's query is embedded and searched against a FAISS vector database and a BM25 keyword index (`backend/retriever.py`), and then sent to the Groq LLM API (`backend/generator.py`).
+- **Retrieval Evaluation**: `backend/eval_retrieval.py` calculates Hit Rate and MRR comparing Vector Search vs Hybrid Search.
+- **LLM Evaluation**: `backend/eval_llm.py` tests multiple prompt variants (Plain English vs Strict Legal Analyst) and evaluates their output.
+- **Monitoring**: `backend/monitor.py` is a Streamlit dashboard that reads from a SQLite database (`monitoring/logs.db`) tracking every query, the LLM's response time, and thumbs up/thumbs down user feedback.
+- **Containerization**: *(Coming soon in Phase 8 - Dockerfiles and docker-compose)*
+- **Reproducibility**: See the "How to Run" section below.
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+- **Data Pipeline**: Prefect (`backend/ingest.py`) parses the raw GDPR text and builds the indexes.
+- **Retrieval (Hybrid)**: FAISS (Vector Semantic Search) + BM25 (Keyword Exact Match Search).
+- **Backend API**: FastAPI serving the RAG pipeline.
+- **LLM Engine**: Groq API (`llama-3.1-8b-instant`) for ultra-fast generation.
+- **Frontend UI**: Next.js (React, TypeScript, TailwindCSS) with a premium dark-mode aesthetic.
+- **Database**: SQLite for query logging and user feedback.
+
+---
+
+## 🚀 How to Run
+
+### 1. Setup the Environment
+Clone the repository and set up a Python virtual environment:
 ```bash
-cd data
-python fetch_and_chunk.py
+git clone https://github.com/sarmad341/gdpr-rag-assistant.git
+cd gdpr-rag-assistant
+python -m venv venv
+venv\Scripts\activate  # (On Windows) or source venv/bin/activate (On Mac/Linux)
 ```
 
-This pulls the complete, exact, official consolidated GDPR text (all 99 articles)
-directly from EUR-Lex — critical for a legal citation tool to be trustworthy.
+### 2. Configure API Keys
+Create a `.env` file in the root directory and add your Groq API key (free at console.groq.com):
+```env
+GROQ_API_KEY=your_api_key_here
+```
 
-## How to run
-
-**1. Data + indexes**
+### 3. Build the Database (Ingestion)
+Install dependencies and run the Prefect ingestion pipeline to build the FAISS and BM25 indexes:
 ```bash
-pip install -r requirements.txt
-cd data && python fetch_and_chunk.py && cd ..
-cd ingestion && python ingest.py --data ../data/gdpr_articles.json --out ../data/index && cd ..
+pip install -r backend/requirements.txt
+python backend/ingest.py
 ```
 
-**2. Backend (FastAPI)**
+### 4. Start the Servers
+You will need three terminal windows to run the full stack (make sure your `venv` is activated in all of them!).
+
+**Terminal 1 (Backend):**
 ```bash
-cd backend
-pip install -r requirements.txt
-export LLM_BACKEND=groq
-export GROQ_API_KEY=your_key_here     # free tier at console.groq.com
-# or: export LLM_BACKEND=ollama       (fully local, needs `ollama serve` + a pulled model)
-uvicorn main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000
 ```
 
-**3. Frontend (Next.js)**
+**Terminal 2 (Frontend):**
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local
 npm run dev
 ```
-Open http://localhost:3000
 
-## What's verified working right now (tested in sandbox, no internet needed)
+**Terminal 3 (Monitoring Dashboard):**
+```bash
+streamlit run backend/monitor.py
+```
 
-- ✅ Article parser: correctly splits raw GDPR text into per-article chunks with metadata
-- ✅ FAISS vector index + BM25 keyword index: both build and search correctly
-- ✅ Hybrid retrieval merge logic: runs correctly end-to-end
-- ✅ FastAPI backend: all routes tested via `TestClient` — query, feedback, health,
-  error handling (400 on empty question, 404 on bad feedback id), SQLite logging
-- ✅ Next.js frontend: `npm run build` compiles cleanly, all TypeScript types check out,
-  component tree (query form → loading state → answer card → article stamps → feedback
-  buttons → error state) renders without errors
+---
 
-**Not yet testable in this sandbox** (needs your internet access): downloading the
-`all-MiniLM-L6-v2` embedding model, Google Fonts fetch during Next.js build/dev,
-and calling Groq/Ollama for generation. All are wired up correctly and will work
-as soon as you run the commands above on your own machine.
+## 💡 Usage & Examples
 
-## Next phases (not yet built)
-- Phase 4: Retrieval evaluation (vector vs hybrid, hit rate/MRR)
-- Phase 5: LLM evaluation (prompt comparison)
-- Phase 7: Monitoring dashboard (SQLite logging already in place via backend)
-- Phase 8: Docker/docker-compose for full stack
-- Phase 9: Final documentation
+Once the servers are running, open **http://localhost:3000** in your browser. 
+
+Here are a few example questions you can ask the GDPR assistant:
+1. *"What are the conditions for consent?"*
+2. *"When is a data protection officer required?"*
+3. *"What are the penalties for violating the GDPR?"*
+4. *"Can I process data about someone's racial or ethnic origin?"*
+
+The system will generate an answer and display the specific GDPR Article stamps that it used to formulate the response. 
+
+### User Feedback
+You can click the 👍 or 👎 buttons on any answer. This feedback is instantly logged to the SQLite database.
+
+### The Admin Dashboard
+Open **http://localhost:8501** to view the Streamlit Monitoring Dashboard. Here you can see a high-level overview of total queries, average latency, user feedback metrics, and a table of all historical questions and answers.
+
+![Dashboard Screenshot](docs/dashboard_screenshot.png) *(Placeholder: Add a screenshot of the Streamlit dashboard here!)*
