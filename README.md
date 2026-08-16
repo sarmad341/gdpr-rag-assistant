@@ -1,7 +1,7 @@
 # GDPR Q&A Assistant — Ask the Regulation
 
 > **Reviewer Note on Screenshots:**
-> *[USER: Take a screenshot of your Next.js UI showing a question, the answer, and the article citation stamps. Save it as `docs/ui_screenshot.png` and it will appear here.]*
+
 > ![UI Screenshot](docs/ui_screenshot.png) 
 
 ## 📖 The Problem
@@ -103,7 +103,7 @@ Example questions:
 2. *"When is a data protection officer required?"*
 
 > **Reviewer Note on Dashboard Screenshot:**
-> *[USER: Take a screenshot of your Streamlit dashboard at http://localhost:8501 showing the 5 charts. Save it as `docs/dashboard_screenshot.png` and it will appear here.]*
+
 > ![Dashboard Screenshot](docs/dashboard_screenshot.png) 
 
 ---
