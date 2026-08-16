@@ -120,17 +120,24 @@ def query(req: QueryRequest):
 
     start = time.time()
     try:
-        # Optional Bonus: User Query Rewriting for better search
-        # rewritten_query = generator.rewrite_query(req.question)
-        # Using the original question directly for retrieval for now
-        retrieved = retriever.retrieve(req.question, k=req.k, mode=req.mode)
-        prompt = generator.build_prompt(req.question, retrieved)
+        # 1. User Query Rewriting for optimized search
+        rewritten_query = generator.rewrite_query(req.question)
+        
+        # 2. Over-fetch candidates using the chosen search mode
+        candidates = retriever.retrieve(rewritten_query, k=max(req.k * 3, 15), mode=req.mode)
+        
+        # 3. Cross-Encoder Re-ranking
+        top_k = retriever.rerank(rewritten_query, candidates, k=req.k)
+        
+        # 4. Generate final answer (passing original question to LLM, but using rewritten context)
+        prompt = generator.build_prompt(req.question, top_k)
         answer_text = generator.generate(prompt)
+        
         result = {
             "answer": answer_text,
             "retrieved_articles": [
                 {"article_number": a["article_number"], "title": a["title"], "score": s}
-                for a, s in retrieved
+                for a, s in top_k
             ]
         }
     except Exception as e:
