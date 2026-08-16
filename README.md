@@ -33,6 +33,40 @@ This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy
 
 ---
 
+## 📊 Dataset
+
+**Source:** Official consolidated text of Regulation (EU) 2016/679 (GDPR), via EUR-Lex — the European Union's official legal database.
+- HTML (used for parsing): https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02016R0679-20160504
+- PDF (reference copy): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:02016R0679
+
+**Processing:** `backend/ingest.py` leverages Prefect to orchestrate the pipeline, processing the JSON data into 99 article-level chunks — one per GDPR Article — preserving chapter and title metadata for each. We chunk by legal article rather than fixed token windows because splitting an article mid-clause would break the citation guarantee that the whole system is built around: every answer must trace back to a complete, correctly-numbered article.
+
+The processed dataset lives at `backend/data/gdpr_articles.json` and is committed to the repo, so reviewers don't need to re-run the scraper to inspect the data — though `python backend/ingest.py` will re-build the vector database from scratch if needed.
+
+---
+
+## 🧪 For Reviewers — Try These
+
+If you're peer-reviewing this project, here are some quick questions to test the core flow. Each has a known correct article, so you can sanity-check the citations yourself without needing GDPR expertise:
+
+| Question | Should cite |
+|---|---|
+| "What is the right to be forgotten?" | Article 17 |
+| "How long do I have to report a data breach?" | Article 33 |
+| "Do I need a Data Protection Officer?" | Article 37 |
+| "Can I take my data to a different company?" | Article 20 |
+| "What counts as personal data?" | Article 4 |
+
+**Also worth trying:**
+- **Out-of-scope question** — e.g. "What does CCPA say about opt-outs?" — the assistant should say it can't answer from GDPR rather than guessing, since it's only grounded in this one regulation.
+- **Paraphrased/jargon-free question** — e.g. "can a company delete my info if I ask?" instead of "right to erasure" — checks that semantic search finds the right article even without exact legal terminology.
+- **Feedback loop** — click 👍 or 👎 on any answer, then open the monitoring dashboard at http://localhost:8501 and confirm it shows up in the feedback chart.
+- **Retrieval quality** — the answer panel shows which articles were retrieved ("Grounded in") — check whether they're actually relevant to the question, not just whether the final answer sounds plausible.
+
+If an answer looks wrong or a citation seems off, that's useful feedback — please note it in your review!
+
+---
+
 ## 🏗️ Architecture & Tech Stack
 
 - **Data Pipeline**: Prefect.

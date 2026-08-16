@@ -6,5 +6,5 @@ node_modules/
 .next/
 .DS_Store
 data/
-backend/data/
+backend/data/index/
 *.db
