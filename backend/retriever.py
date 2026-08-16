@@ -33,6 +33,7 @@ class Retriever:
         self._lazy_load()
         q_vec = self._model.encode([query], convert_to_numpy=True).astype("float32")
         faiss.normalize_L2(q_vec)
+        k = min(k, self._faiss_index.ntotal)
         scores, idxs = self._faiss_index.search(q_vec, k)
         return [
             (self._articles[i], float(scores[0][rank]))
@@ -44,6 +45,7 @@ class Retriever:
         self._lazy_load()
         tokenized_query = query.lower().split()
         scores = self._bm25.get_scores(tokenized_query)
+        k = min(k, len(self._articles))
         top_idxs = np.argsort(scores)[::-1][:k]
         return [(self._articles[i], float(scores[i])) for i in top_idxs]
 
