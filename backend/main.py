@@ -23,8 +23,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "rag"))
-from rag import GdprRag  # noqa: E402
+sys.path.insert(0, os.path.dirname(__file__))
+from retriever import Retriever  # noqa: E402
+from generator import Generator  # noqa: E402
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "monitoring", "logs.db")
 
@@ -40,7 +41,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-rag = GdprRag()
+retriever = Retriever()
+generator = Generator()
 
 
 # ---------- DB setup ----------
@@ -118,7 +120,19 @@ def query(req: QueryRequest):
 
     start = time.time()
     try:
-        result = rag.answer(req.question, k=req.k, mode=req.mode)
+        # Optional Bonus: User Query Rewriting for better search
+        # rewritten_query = generator.rewrite_query(req.question)
+        # Using the original question directly for retrieval for now
+        retrieved = retriever.retrieve(req.question, k=req.k, mode=req.mode)
+        prompt = generator.build_prompt(req.question, retrieved)
+        answer_text = generator.generate(prompt)
+        result = {
+            "answer": answer_text,
+            "retrieved_articles": [
+                {"article_number": a["article_number"], "title": a["title"], "score": s}
+                for a, s in retrieved
+            ]
+        }
     except Exception as e:
         raise HTTPException(500, f"RAG pipeline error: {e}")
     latency_ms = int((time.time() - start) * 1000)
