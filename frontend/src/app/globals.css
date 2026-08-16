@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #14213d;
+  --ink-light: #1f2f52;
+  --parchment: #f7f3e8;
+  --parchment-line: #e4dcc6;
+  --brass: #b08d57;
+  --brass-bright: #c9a56b;
+  --slate: #a9b2c8;
+  --slate-dark: #4a5568;
+  --success: #4f8f68;
+  --error: #c4645a;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-parchment: var(--parchment);
+  --color-brass: var(--brass);
+  --font-serif: var(--font-source-serif);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--ink);
+  color: var(--slate);
+  font-family: var(--font-inter), sans-serif;
+}
+
+::selection {
+  background: var(--brass);
+  color: var(--ink);
+}
