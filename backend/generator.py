@@ -1,5 +1,8 @@
 import os
 from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Removed OLLAMA references as per user request
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")

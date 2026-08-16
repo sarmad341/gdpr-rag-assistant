@@ -17,15 +17,15 @@
   --color-ink: var(--ink);
   --color-parchment: var(--parchment);
   --color-brass: var(--brass);
-  --font-serif: var(--font-source-serif);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-plex-mono);
+  --font-serif: Georgia, ui-serif, serif;
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
 }
 
 body {
   background: var(--ink);
   color: var(--slate);
-  font-family: var(--font-inter), sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 ::selection {
