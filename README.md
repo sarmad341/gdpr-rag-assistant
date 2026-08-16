@@ -37,7 +37,7 @@ This project was built for the DataTalks.Club LLM Zoomcamp. To make grading easy
 
 **Source:** Official consolidated text of Regulation (EU) 2016/679 (GDPR), via EUR-Lex — the European Union's official legal database.
 - HTML (used for parsing): https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02016R0679-20160504
-- PDF (reference copy): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:02016R0679
+- PDF (reference copy): https://www.legislation.gov.uk/eur/2016/679/pdfs/eur_20160679_2016-05-04_en.pdf
 
 **Processing:** `backend/ingest.py` leverages Prefect to orchestrate the pipeline, processing the JSON data into 99 article-level chunks — one per GDPR Article — preserving chapter and title metadata for each. We chunk by legal article rather than fixed token windows because splitting an article mid-clause would break the citation guarantee that the whole system is built around: every answer must trace back to a complete, correctly-numbered article.
 
